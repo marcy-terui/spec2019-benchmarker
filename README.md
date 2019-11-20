@@ -11,18 +11,19 @@ The competition portal site (frontend) is [here](https://github.com/hassaku63/se
 # Requirements
 - Your AWS Account
 - Python 3.7
-- Serverless Framework
+- [Serverless Framework](https://serverless.com/)
 - Serverless Framework Plugins
-  - serverless-step-functions
-  - serverless-pseudo-parameters
-  - serverless-python-requirements
+  - [serverless-step-functions](https://github.com/horike37/serverless-step-functions)
+  - [serverless-pseudo-parameters](https://github.com/svdgraaf/serverless-pseudo-parameters)
+  - [serverless-python-requirements](https://github.com/UnitedIncome/serverless-python-requirements)
 
 # Deploy
 
-```
+```sh
 export APPSYNC_URL=<your-frontend-appsync-url>
 export APPSYNC_REGION=<your-frontend-appsync-region>
 export APPSYNC_APIKEY=<your-frontend-appsync-apikey>
+npm install
 sls deploy
 ```
 
@@ -30,13 +31,13 @@ sls deploy
 
 ## Add the new team
 
-```
+```sh
 sls invoke -f add -d '{"teamId": "<your-team-name>", "url": "<your-api-base-url>"}'
 ```
 
 ## Delete the team
 
-```
+```sh
 sls invoke -f delete -d '{"teamId": "<your-team-name>"}'
 ```
 
@@ -46,13 +47,13 @@ sls invoke -f delete -d '{"teamId": "<your-team-name>"}'
 
 ### All teams
 
-```
+```sh
 sls invoke -f start -d '{"concurrency": 2}'
 ```
 
 ### Choose one of the teams
 
-```
+```sh
 sls invoke -f start -d '{"teamId": "<your-team-name>", "concurrency": 2}'
 ```
 
@@ -60,13 +61,13 @@ sls invoke -f start -d '{"teamId": "<your-team-name>", "concurrency": 2}'
 
 ### All teams
 
-```
+```sh
 sls invoke -f stop
 ```
 
 ### Choose one of the teams
 
-```
+```sh
 sls invoke -f stop -d '{"teamId": "<your-team-name>"}'
 ```
 
