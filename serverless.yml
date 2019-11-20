@@ -1,0 +1,201 @@
+service: spec-benchmark
+
+custom:
+  sfnArn: arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:stateMachine:specBenchmark-${self:provider.stage}
+
+provider:
+  name: aws
+  runtime: python3.7
+  region: us-west-2
+  stage: prod
+  timeout: 30
+  environment:
+    SFN_ARN: ${self:custom.sfnArn}
+    TEAM_TABLE:
+      Ref: TeamTable
+    NOTIFICATION_TABLE:
+      Ref: NotificationTable
+    APPSYNC_URL: ${env:APPSYNC_URL}
+    APPSYNC_REGION: ${env:APPSYNC_REGION}
+    APPSYNC_APIKEY: ${env:APPSYNC_APIKEY}
+    SEND_RESULTS_FUNCTION: ${self:service}-${self:provider.stage}-sendResults
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - "dynamodb:Scan"
+        - "dynamodb:GetItem"
+        - "dynamodb:PutItem"
+        - "dynamodb:Query"
+        - "dynamodb:UpdateItem"
+        - "dynamodb:DeleteItem"
+        - "states:StartExecution"
+        - "lambda:InvokeFunction"
+      Resource:
+        - "*"
+
+functions:
+  start:
+    handler: handler.start
+    runtime: nodejs10.x
+  stop:
+    handler: handler.stop
+    runtime: nodejs10.x
+  add:
+    handler: handler.add
+    runtime: nodejs10.x
+  delete:
+    handler: handler.delete
+    runtime: nodejs10.x
+  getUrl:
+    handler: senario.get_url
+  generateSenario:
+    handler: senario.generate
+  createUsers:
+    handler: handler.createUsers
+    runtime: nodejs10.x
+  executeActions:
+    handler: senario.execute_actions
+  buildResult:
+    handler: senario.build_result
+  recieveNotification:
+    handler: senario.recieve_notification
+    events:
+      - http:
+          path: notification
+          method: post
+  location:
+    handler: senario.location
+    events:
+      - http:
+          path: location
+          method: get
+  checkResults:
+    handler: senario.check_results
+    timeout: 600
+    events:
+      - sqs:
+          batchSize: 1
+          arn:
+            Fn::GetAtt:
+              - SenarioResultQueue
+              - Arn
+  sendResults:
+    handler: results.sendResults
+    runtime: nodejs10.x
+    # handler: senario.send_results
+
+plugins:
+  - serverless-step-functions
+  - serverless-pseudo-parameters
+  - serverless-python-requirements
+
+resources:
+  Resources:
+    SenarioResultQueue:
+      Type: AWS::SQS::Queue
+      Properties:
+        DelaySeconds: 10
+        VisibilityTimeout: 900
+    TeamTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+    NotificationTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: transactionId
+            AttributeType: S
+          - AttributeName: userId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: transactionId
+            KeyType: HASH
+          - AttributeName: userId
+            KeyType: RANGE
+
+stepFunctions:
+  stateMachines:
+    specBenchmark:
+      name: specBenchmark-${self:provider.stage}
+      definition:
+        Comment: "The benchmark of S.P.E.C Contest"
+        StartAt: GetUrl
+        States:
+          GetUrl:
+            Type: Task
+            Resource:
+              Fn::GetAtt: [getUrl, Arn]
+            Next: GenerateSenario
+          GenerateSenario:
+            Type: Task
+            Resource:
+              Fn::GetAtt: [generateSenario, Arn]
+            Next: CreateUsers
+          CreateUsers:
+            Type: Task
+            ResultPath: $.create_users_result
+            Resource:
+              Fn::GetAtt: [createUsers, Arn]
+            Next: ExecuteSenario
+            Catch:
+              - ErrorEquals: ["States.ALL"]
+                Next: WaitForError
+                ResultPath: $.create_users_error
+          WaitForError:
+            Type: Wait
+            Seconds: 10
+            Next: ReExecuteError
+          ReExecuteError:
+            Type: Task
+            Resource: "arn:aws:states:::states:startExecution"
+            ResultPath: $.re_execute
+            Parameters:
+              Input:
+                execution.$: $.execution
+              StateMachineArn: ${self:custom.sfnArn}
+            End: true
+          ExecuteSenario:
+            Type: Map
+            ItemsPath: $.senario
+            ResultPath: $.results
+            Iterator:
+              StartAt: ExecuteActions
+              States:
+                ExecuteActions:
+                  Type: Task
+                  Resource:
+                    Fn::GetAtt: [executeActions, Arn]
+                  End: true
+            Next: ReExecute
+          ReExecute:
+            Type: Task
+            Resource: "arn:aws:states:::states:startExecution"
+            ResultPath: $.re_execute
+            Parameters:
+              Input:
+                execution.$: $.execution
+              StateMachineArn: ${self:custom.sfnArn}
+            Next: BuildResult
+          BuildResult:
+            Type: Task
+            ResultPath: $.result_message
+            Resource:
+              Fn::GetAtt: [buildResult, Arn]
+            Next: SendResult
+          SendResult:
+            Type: Task
+            Resource: "arn:aws:states:::sqs:sendMessage"
+            ResultPath: $.send_result
+            Parameters:
+              QueueUrl:
+                Ref: SenarioResultQueue
+              MessageBody.$: $.result_message
+            End: true

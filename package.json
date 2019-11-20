@@ -1,0 +1,18 @@
+{
+  "name": "spec-benchmark",
+  "description": "",
+  "version": "0.1.0",
+  "dependencies": {
+    "aws-appsync": "^2.0.1",
+    "aws-sdk": "^2.546.0",
+    "graphql-tag": "^2.10.1",
+    "isomorphic-fetch": "^2.2.1",
+    "request": "^2.88.0",
+    "request-promise": "^4.2.4"
+  },
+  "devDependencies": {
+    "serverless-pseudo-parameters": "^2.5.0",
+    "serverless-python-requirements": "^5.0.0",
+    "serverless-step-functions": "^2.10.1"
+  }
+}

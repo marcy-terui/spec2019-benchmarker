@@ -1,0 +1,3 @@
+faker
+boto3
+requests
