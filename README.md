@@ -16,6 +16,7 @@ The competition portal site (frontend) is [here](https://github.com/hassaku63/se
 # Requirements
 - Your AWS Account
 - Python 3.7
+- Node.js 10
 - [Serverless Framework](https://serverless.com/)
 - Serverless Framework Plugins
   - [serverless-step-functions](https://github.com/horike37/serverless-step-functions)
