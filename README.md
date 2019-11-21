@@ -8,6 +8,11 @@ The theme application is [here](https://github.com/marcy-terui/spec2019-theme).
 
 The competition portal site (frontend) is [here](https://github.com/hassaku63/serverlessdays2019-spec-frontend).
 
+# Overview
+
+![Overview Image](https://user-images.githubusercontent.com/4560264/69319985-a4999880-0c83-11ea-9d1b-96dee04c21a4.png)
+
+
 # Requirements
 - Your AWS Account
 - Python 3.7
