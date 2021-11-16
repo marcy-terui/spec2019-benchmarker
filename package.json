@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "dependencies": {
     "aws-appsync": "^2.0.1",
-    "aws-sdk": "^2.546.0",
+    "aws-sdk": "^2.814.0",
     "graphql-tag": "^2.10.1",
     "isomorphic-fetch": "^2.2.1",
     "request": "^2.88.0",
